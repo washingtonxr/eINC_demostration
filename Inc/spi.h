@@ -33,6 +33,8 @@
 extern SPI_HandleTypeDef hspi1;
 
 /* USER CODE BEGIN Private defines */
+void SPI1_Enable(void);
+void SPI1_Disable(void);
 
 /* USER CODE END Private defines */
 

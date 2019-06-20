@@ -27,7 +27,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */     
 #include "common.h"
-#include "gdeh0154d27.h"
+#include "eInk.h"
+#include "led.h"
 
 /* USER CODE END Includes */
 
@@ -54,6 +55,8 @@ osThreadId defaultTaskHandle;
 osThreadId myTask02Handle;
 osThreadId myTask03Handle;
 osThreadId myTask04Handle;
+osMutexId myMutex01Handle;
+osSemaphoreId myBinarySem01Handle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -77,9 +80,19 @@ void MX_FREERTOS_Init(void) {
        
   /* USER CODE END Init */
 
+  /* Create the mutex(es) */
+  /* definition and creation of myMutex01 */
+  osMutexDef(myMutex01);
+  myMutex01Handle = osMutexCreate(osMutex(myMutex01));
+
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* definition and creation of myBinarySem01 */
+  osSemaphoreDef(myBinarySem01);
+  myBinarySem01Handle = osSemaphoreCreate(osSemaphore(myBinarySem01), 1);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -99,7 +112,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of myTask02 */
-  osThreadDef(myTask02, StartTask02, osPriorityIdle, 0, 128);
+  osThreadDef(myTask02, StartTask02, osPriorityIdle, 0, 512);
   myTask02Handle = osThreadCreate(osThread(myTask02), NULL);
 
   /* definition and creation of myTask03 */
@@ -176,6 +189,7 @@ void StartTask03(void const * argument)
   /* Infinite loop */
   for(;;)
   {
+    led_routine();
     osDelay(1);
   }
   /* USER CODE END StartTask03 */

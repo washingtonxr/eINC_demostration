@@ -338,7 +338,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE,USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;   ../Drivers/STM32F1xx_HAL_Driver/Inc;   ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;   ../Middlewares/Third_Party/FreeRTOS/Source/include;   ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;   ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;   ../Drivers/CMSIS/Device/ST/STM32F1xx/Include;   ../Drivers/CMSIS/Include</IncludePath>
+              <IncludePath>../Inc;              ../Drivers/STM32F1xx_HAL_Driver/Inc;              ../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;              ../Middlewares/Third_Party/FreeRTOS/Source/include;              ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;              ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM3;              ../Drivers/CMSIS/Device/ST/STM32F1xx/Include;              ../Drivers/CMSIS/Include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -396,6 +396,11 @@
               <FileName>common.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\common.c</FilePath>
+            </File>
+            <File>
+              <FileName>led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\led.c</FilePath>
             </File>
             <File>
               <FileName>main.c</FileName>
@@ -458,9 +463,14 @@
               <FilePath>../Src/stm32f1xx_hal_timebase_tim.c</FilePath>
             </File>
             <File>
-              <FileName>GDEH0154D27.c</FileName>
+              <FileName>DEPG0154BNS75AF0.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\Src\GDEH0154D27.c</FilePath>
+              <FilePath>..\Src\DEPG0154BNS75AF0.c</FilePath>
+            </File>
+            <File>
+              <FileName>eInk.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\eInk.c</FilePath>
             </File>
           </Files>
         </Group>

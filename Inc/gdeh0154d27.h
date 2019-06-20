@@ -3,10 +3,7 @@
 #include "common.h"
 
 #define ALLSCREEN_GRAGHBYTES 5000
-
-#endif
-
 extern int EPD_Task(void);
 
-
+#endif
 /* End of this file. */
