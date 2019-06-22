@@ -463,14 +463,14 @@
               <FilePath>../Src/stm32f1xx_hal_timebase_tim.c</FilePath>
             </File>
             <File>
-              <FileName>DEPG0154BNS75AF0.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\DEPG0154BNS75AF0.c</FilePath>
-            </File>
-            <File>
               <FileName>eInk.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Src\eInk.c</FilePath>
+            </File>
+            <File>
+              <FileName>DEPG0154BNS75AF0.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\DEPG0154BNS75AF0.c</FilePath>
             </File>
           </Files>
         </Group>

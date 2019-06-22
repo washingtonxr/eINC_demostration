@@ -3,7 +3,6 @@
 #include "freertos.h"
 #include "cmsis_os.h"
 #include "main.h"
-#include "lut_data.h"
 #include "picture_rom.h"
 #include "number_rom.h"
 #include "english_alphabet.h"
@@ -33,6 +32,72 @@ static void EPD_Dis_Part_myself(uint32_t x_startA, uint32_t y_startA,const uint8
                                 uint32_t x_startD, uint32_t y_startD,const uint8_t * datasD,
                                 uint32_t x_startE, uint32_t y_startE,const uint8_t * datasE,
                                 uint32_t PART_COLUMN, uint32_t PART_LINE);
+
+const uint8_t LUT_DATA_part[] = {  //30 bytes
+0x10,
+0x18,
+0x18,
+0x28,
+0x18,
+0x18,
+0x18,
+0x18,
+0x08,
+0x00,
+0x00,
+0x00,
+0x00,
+0x00,
+0x00,
+0x00,
+0x00,
+0x00,
+0x00,
+0x00,
+0x13,
+0x11,
+0x22,
+0x63,
+0x11,
+0x00,
+0x00,
+0x00,
+0x00,
+0x00
+};
+
+const uint8_t LUT_DATA[] = {    //30 bytes
+0x66,
+0x66,
+0x44,
+0x66,
+0xAA,
+0x11,
+0x80,
+0x08,
+0x11,
+0x18,
+0x81,
+0x18,
+0x11,
+0x88,
+0x11,
+0x88,
+0x11,
+0x88,
+0x00,
+0x00,
+0xFF,
+0xFF,
+0xFF,
+0xFF,
+0x5F,
+0xAF,
+0xFF,
+0xFF,
+0x2F,
+0x00
+};
 
 static void Epaper_READBUSY(void)
 { 
@@ -342,11 +407,11 @@ static void EPD_WhiteScreen_White(void)
 }
 
 static void EPD_Dis_Part_myself(uint32_t x_startA, uint32_t y_startA,const uint8_t * datasA,
-                                uint32_t x_startB, uint32_t y_startB,const uint8_t * datasB,
-                                uint32_t x_startC, uint32_t y_startC,const uint8_t * datasC,
-                                uint32_t x_startD, uint32_t y_startD,const uint8_t * datasD,
-                                uint32_t x_startE, uint32_t y_startE,const uint8_t * datasE,
-                                uint32_t PART_COLUMN, uint32_t PART_LINE)
+                                    uint32_t x_startB, uint32_t y_startB,const uint8_t * datasB,
+                                    uint32_t x_startC, uint32_t y_startC,const uint8_t * datasC,
+                                    uint32_t x_startD, uint32_t y_startD,const uint8_t * datasD,
+                                    uint32_t x_startE, uint32_t y_startE,const uint8_t * datasE,
+                                    uint32_t PART_COLUMN, uint32_t PART_LINE)
 {
     uint32_t i;  
     uint32_t x_end,y_start1,y_start2,y_end1,y_end2;
@@ -609,16 +674,18 @@ static void EPD_Dis_Part(uint32_t x_start, uint32_t y_start,const uint8_t * data
     for(i = 0; i < PART_COLUMN*PART_LINE/8; i++){                         
         Epaper_Write_Data(*datas);
         datas++;
-    } 
+    }
+    EPD_Part_Update();
 }
 
 int EPD_Task(void)
 {
     uint8_t fen_L, fen_H, miao_L, miao_H;
 
+while(1){
     EPD_HW_Init();
     EPD_WhiteScreen_ALL(gImage_1);
-    osDelay(4000);
+    osDelay(100);
 
     EPD_SetRAMValue_BaseMap(gImage_logo);
     EPD_Part_Init();
@@ -632,17 +699,11 @@ int EPD_Task(void)
     EPD_Dis_Part(0,32,gImage_num8,32,32);
     EPD_Dis_Part(0,32,gImage_num9,32,32);
     osDelay(100);  
-#if 1
-    EPD_SetRAMValue_BaseMap(gImage_basemap);      
-#else
-    EPD_HW_Init();
-    EPD_WhiteScreen_Black();
-    osDelay(4000);
-    EPD_HW_Init();
-#endif
+
+    EPD_SetRAMValue_BaseMap(gImage_200bb);    // gImage_basemap
     EPD_Part_Init();
 
-    while(1){
+#if 0
         for(fen_H=0;fen_H<6;fen_H++){
             for(fen_L=0;fen_L<10;fen_L++){
 #if 0
@@ -676,6 +737,120 @@ int EPD_Task(void)
                 }
             }
         }
+#else
+        /* Initializing all. */
+        EPD_Dis_Part_myself(0,40,B_Num[0],
+                            0,72,B_Num[0],
+                            0,112,gImage_numdot,
+                            0,154,B_Num[0],
+                            0,186,B_Num[0],32,64);
+        EPD_Dis_Part_myself(0,40,B_Num[0],
+                            0,72,B_Num[0],
+                            0,112,gImage_white,
+                            0,154,B_Num[0],
+                            0,186,B_Num[0],32,64);
+
+        for(fen_H=0;fen_H<1;fen_H++){
+            for(fen_L=0;fen_L<1;fen_L++){
+                for(miao_H=0;miao_H<1;miao_H++){
+                    for(miao_L=0;miao_L<1;miao_L++){
+                        EPD_Dis_Part_myself(0,40,B_Num[miao_L],
+                                            0,72,B_Num[miao_H],
+                                            0,112,gImage_numdot,
+                                            0,154,B_Num[fen_L],
+                                            0,186,B_Num[fen_H],32,64);
+                        EPD_Dis_Part_myself(0,40,B_Num[miao_L],
+                                            0,72,B_Num[miao_H],
+                                            0,112,gImage_white,
+                                            0,154,B_Num[fen_L],
+                                            0,186,B_Num[fen_H],32,64);
+                    }
+                }
+            }
+        }
+        for(fen_H=0;fen_H<1;fen_H++){
+            for(fen_L=0;fen_L<1;fen_L++){
+                for(miao_H=0;miao_H<1;miao_H++){
+                    for(miao_L=0;miao_L<1;miao_L++){
+                        EPD_Dis_Part_myself(64,40,B_Num[miao_L],
+                                            64,72,B_Num[miao_H],
+                                            64,112,gImage_numdot,
+                                            64,154,B_Num[fen_L],
+                                            64,186,B_Num[fen_H],32,64);
+                        EPD_Dis_Part_myself(64,40,B_Num[miao_L],
+                                            64,72,B_Num[miao_H],
+                                            64,112,gImage_white,
+                                            64,154,B_Num[fen_L],
+                                            64,186,B_Num[fen_H],32,64);
+                    }
+                }
+            }
+        }
+#if 0
+        for(fen_H=0;fen_H<6;fen_H++){
+            for(fen_L=0;fen_L<10;fen_L++){
+                for(miao_H=0;miao_H<6;miao_H++){
+                    for(miao_L=0;miao_L<10;miao_L++){
+                        EPD_Dis_Part_myself(128,40,B_Num[miao_L],
+                                            128,72,B_Num[miao_H],
+                                            128,112,gImage_numdot,
+                                            128,154,B_Num[fen_L],
+                                            128,186,B_Num[fen_H],32,64);
+                        EPD_Dis_Part_myself(128,40,B_Num[miao_L],
+                                            128,72,B_Num[miao_H],
+                                            128,112,gImage_white,
+                                            128,154,B_Num[fen_L],
+                                            128,186,B_Num[fen_H],32,64);
+                    }
+                }
+            }
+        }
+#else
+        uint8_t i;
+
+        for(i = 0; i < 10; i++){
+            EPD_Dis_Part(128, 194, gImage_pin_64sqr[i], 64, 64);
+            EPD_Dis_Part(128, 130, gImage_pin_64sqr[i], 64, 64);
+            EPD_Dis_Part(128, 66, gImage_pin_64sqr[i], 64, 64);
+        }
+
+        EPD_Part_Init();
+        EPD_SetRAMValue_BaseMap(gImage_200bb);    // gImage_basemap
+        EPD_Part_Init();
+
+        for(i = 0; i < 4; i++){
+            EPD_Dis_Part(64, 164, gImage_Dir0_128sqr[i], 128, 128);
+            osDelay(1000);
+        }
+
+        EPD_HW_Init();
+        EPD_WhiteScreen_White();
+
+        EPD_Part_Init();
+        EPD_SetRAMValue_BaseMap(gImage_200bb);    // gImage_basemap
+        EPD_Part_Init();
+
+        for(fen_H=0;fen_H<1;fen_H++){
+            for(fen_L=0;fen_L<1;fen_L++){
+                for(miao_H=0;miao_H<1;miao_H++){
+                    for(miao_L=0;miao_L<10;miao_L++){
+                        EPD_Dis_Part_myself(128,40,B_Num[miao_L],
+                                            128,72,B_Num[miao_H],
+                                            128,112,gImage_numdot,
+                                            128,154,B_Num[miao_L],
+                                            128,186,B_Num[miao_L],32,64);
+                        EPD_Dis_Part_myself(128,40,B_Num[miao_L],
+                                            128,72,B_Num[miao_L],
+                                            128,112,gImage_white,
+                                            128,154,B_Num[miao_L],
+                                            128,186,B_Num[miao_L],32,64);
+                    }
+                }
+            }
+        }
+
+#endif
+#endif
     }  
 #if 0
     osDelay(500);

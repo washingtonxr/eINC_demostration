@@ -3,7 +3,6 @@
 #include "freertos.h"
 #include "cmsis_os.h"
 #include "main.h"
-#include "lut_data.h"
 #include "picture_rom.h"
 #include "number_rom.h"
 #include "english_alphabet.h"
@@ -15,9 +14,88 @@ static void Epaper_Write_Command(uint8_t cmd);
 static void Epaper_Write_Data(uint8_t data);
 static void EPD_HW_Init(void);
 static void EPD_UpdateAndClose(void);
-static void EPD_UpdateAndClose(void);
+static void EPD_select_LUT(uint8_t * wave_data, uint32_t len);
+static void EPD_SetRAMValue(unsigned char * datas,unsigned int num,unsigned char mode);
 static void EPD_SetRAMValue_15(uint8_t * datas, uint32_t num, uint8_t mode);
+static void EPD_All_White(void);
+static void EPD_All_Black(void);
+static void EPD_all_While_PART(void);
+static void EPD_all_Black_PART(void);
+static void EPD_SetRAM_BW(void);
+static void EPD_BW_first(void);
+static void EPD_Partial(void);
+static void EPD_UpdateBegin_part(unsigned char x_start,unsigned char x_end,unsigned char y_start1,unsigned char y_start2,unsigned char y_end1,unsigned char y_end2);
+static void EPD_SetRAMValue_part(uint8_t * datas, uint32_t num);
+static void EPD_Partial_off(void);
+static void EPD_Partial_Update(void);
+static void EPD_Update(void);
+static void EPD_Sleep(void);
+static void EPD_UpdateBegin(void);
+static void EPD_SetAll_white(void);
+static void EPD_Black(void);
+static void EPD_WhiteGrid(void);
+static void EPD_WhiteGrid_reload(void);
+static void EPD_SetAll_BW(void);
+static void EPD_SetRAMValue_BaseMap(const uint8_t *datas);
+static void EPD_Dis_Part(uint32_t x_start, uint32_t y_start,
+                            const uint8_t * datas,
+                            uint32_t PART_COLUMN, uint32_t PART_LINE);
+static void EPD_Part_Init(void);
+void EPD_SetRAMValue_part_image2(unsigned char * datas,unsigned int num);
+static void EPD_SetRAMValue_part_image2(unsigned char * datas,unsigned int num);
+static void EPD_UpdateAndClose_part(void);
 
+const unsigned char LUT_DATA[]=
+{						
+0xA0,	0x84,	0x50,	0x0,	0x0,	0x0,	0x0,
+0x50,	0x84,	0xA0,	0x0,	0x0,	0x0,	0x0,
+0xA0,	0x84,	0x50,	0x0,	0x0,	0x0,	0x0,
+0x50,	0x84,	0xA0,	0x0,	0x0,	0x0,	0x0,
+0x0,	0x0,	0x0,	0x0,	0x0,	0x0,	0x0,
+0x2,	0x1,	0x0,	0x0,	0x1,		
+0x5,	0x0,	0x5,	0x0,	0x1,		
+0x2,	0x1,	0x0,	0x0,	0x1,		
+0x0,	0x0,	0x0,	0x0,	0x0,		
+0x0,	0x0,	0x0,	0x0,	0x0,		
+0x0,	0x0,	0x0,	0x0,	0x0,		
+0x0,	0x0,	0x0,	0x0,	0x0,		
+0x17,	0x50,	0x0,	0x3E,			
+0x11,	0x0D};					
+/*const*/ unsigned char LUT_DATA_part[]=
+{
+0X00,0x40,0x00,0x00,0x00,0x00,0x00,	// L0 0-6 ABCD		
+0X80,0x80,0x00,0x00,0x00,0x00,0x00,	// L1 0-6 ABCD		
+0X40,0x40,0x00,0x00,0x00,0x00,0x00,	// L2 0-6 ABCD		
+0X00,0x80,0x00,0x00,0x00,0x00,0x00,	// L3 0-6 ABCD		
+0X00,0x00,0x00,0x00,0x00,0x00,0x00,	// VCOM 0-6 ABCD		
+			
+0x0A,0x00,0x00,0x00,0x02,//0A 0B 0C 0D R			
+0x02,0x00,0x00,0x00,0x00,//1A 0B 0C 0D R			
+0x00,0x00,0x00,0x00,0x00,//2A 0B 0C 0D R			
+0x00,0x00,0x00,0x00,0x00,//3A 0B 0C 0D R			
+0x00,0x00,0x00,0x00,0x00,//4A 0B 0C 0D R			
+0x00,0x00,0x00,0x00,0x00,//5A 0B 0C 0D R			
+0x00,0x00,0x00,0x00,0x00,//6A 0B 0C 0D R 
+0x17,	0x41,	0x0,	0x32,			
+0x11,	0x0D};			
+
+/* const*/ unsigned char WF_FULL_DATA[76] =
+ {
+0xA0,	0x90,	0x50,	0x0,	0x0,	0x0,	0x0,
+0x50,	0x90,	0xA0,	0x0,	0x0,	0x0,	0x0,
+0xA0,	0x90,	0x50,	0x0,	0x0,	0x0,	0x0,
+0x50,	0x90,	0xA0,	0x0,	0x0,	0x0,	0x0,
+0x0,	0x0,	0x0,	0x0,	0x0,	0x0,	0x0,
+0xF,	0xF,	0x0,	0x0,	0x0,		
+0xF,	0xF,	0x0,	0x0,	0x3,		
+0xF,	0xF,	0x0,	0x0,	0x0,		
+0x0,	0x0,	0x0,	0x0,	0x0,		
+0x0,	0x0,	0x0,	0x0,	0x0,		
+0x0,	0x0,	0x0,	0x0,	0x0,		
+0x0,	0x0,	0x0,	0x0,	0x0,		
+0x17,	0x41,	0x0,	0x32,			
+0x11,	0x0D};
+			
 static void Epaper_READBUSY(void)
 { 
     while(1){	 //=1 BUSY
@@ -113,7 +191,21 @@ static void EPD_HW_Init(void)
     /* Border waveform control. */
     Epaper_Write_Command(0x3C);
     Epaper_Write_Data(0x01);
-    
+#if 0
+    Epaper_Write_Command(0x2c);       // vcom write    
+    Epaper_Write_Data(0x6A); 
+
+    EPD_select_LUT(WF_FULL_DATA, sizeof(WF_FULL_DATA));
+
+    Epaper_Write_Command(0x4E);     
+    Epaper_Write_Data(0x00);
+
+    Epaper_Write_Command(0x4F);       
+    Epaper_Write_Data(0x97); //0x2b
+    Epaper_Write_Data(0x00); //0x01
+
+    Epaper_READBUSY();
+#else
     /* Temperature sensor control. */
     Epaper_Write_Command(0x18);     // write VCOM voltage
     //HalLcd_HW_Write(0x48);        // use the external temperature sensor
@@ -128,6 +220,7 @@ static void EPD_HW_Init(void)
 
     /* Wait for busy low. */
     Epaper_READBUSY();
+#endif
 }
 
 static void EPD_UpdateAndClose(void)
@@ -147,15 +240,15 @@ static void EPD_UpdateAndClose(void)
     //HalLcd_HW_Write(0x01); 
 }
 
-void EPD_select_LUT(unsigned char * wave_data)
+static void EPD_select_LUT(uint8_t * wave_data, uint32_t len)
 {        
     unsigned char count;
     Epaper_Write_Command(0x32);
-    for(count=0;count<70;count++)
+    for(count=0; count < len; count++)
         Epaper_Write_Data(wave_data[count]);
 }
 
-void HalLcd_SetRAMValue(unsigned char * datas,unsigned int num,unsigned char mode)
+static void EPD_SetRAMValue(unsigned char * datas,unsigned int num,unsigned char mode)
 {
     unsigned int i;   
     unsigned char tempOriginal;      
@@ -203,7 +296,7 @@ static void EPD_SetRAMValue_15(uint8_t * datas, uint32_t num, uint8_t mode)
     }
 }
 
-void EPD_All_White()
+static void EPD_All_White(void)
 {
     unsigned int i,k;
     Epaper_Write_Command(0x4E);   // set RAM x address count to 0;
@@ -233,7 +326,7 @@ void EPD_All_White()
     }
 }
 
-void EPD_All_Black()
+static void EPD_All_Black(void)
 {
     unsigned int i,k;
     Epaper_Write_Command(0x4E);   // set RAM x address count to 0;
@@ -263,7 +356,7 @@ void EPD_All_Black()
     }
 }
 
-void EPD_all_While_PART()
+static void EPD_all_While_PART(void)
 {
     unsigned int i,k;
     Epaper_Write_Command(0x4E);   // set RAM x address count to 0;
@@ -280,7 +373,7 @@ void EPD_all_While_PART()
     }
 }
 
-void EPD_all_Black_PART()
+static void EPD_all_Black_PART(void)
 {
     unsigned int i,k;
     Epaper_Write_Command(0x4E);   // set RAM x address count to 0;
@@ -297,7 +390,7 @@ void EPD_all_Black_PART()
     }
 }
 
-void EPD_SetRAM_BW(void)
+static void EPD_SetRAM_BW(void)
 {
     Epaper_Write_Command(0x11);      //    
     Epaper_Write_Data(0x01);//
@@ -319,7 +412,7 @@ void EPD_SetRAM_BW(void)
     Epaper_Write_Data(0x01);
 }
 
-void EPD_BW_first()
+static void EPD_BW_first(void)
 {
     unsigned int i,k;
     Epaper_Write_Command(0x4E);   // set RAM x address count to 0;
@@ -336,11 +429,11 @@ void EPD_BW_first()
     }
 }
 
-void EPD_Partial(void)
+static void EPD_Partial(void)
 {
     Epaper_READBUSY();
     osDelay(20);
-    EPD_select_LUT((unsigned char *)LUT_DATA_part);
+    EPD_select_LUT((unsigned char *)LUT_DATA_part, sizeof(LUT_DATA_part));
     Epaper_Write_Command(0x37);
     Epaper_Write_Data(0x00);
     Epaper_Write_Data(0x00);
@@ -356,7 +449,7 @@ void EPD_Partial(void)
     osDelay(20);
 }
 
-void EPD_UpdateBegin_part(unsigned char x_start,unsigned char x_end,unsigned char y_start1,unsigned char y_start2,unsigned char y_end1,unsigned char y_end2)
+static void EPD_UpdateBegin_part(unsigned char x_start,unsigned char x_end,unsigned char y_start1,unsigned char y_start2,unsigned char y_end1,unsigned char y_end2)
 {
     Epaper_Write_Command(0x44);       // set RAM x address start/end, in page 35
     Epaper_Write_Data(x_start);    // RAM x address start at 00h;
@@ -375,12 +468,12 @@ void EPD_UpdateBegin_part(unsigned char x_start,unsigned char x_end,unsigned cha
     Epaper_Write_Data(y_start1);
 }
 
-void EPD_SetRAMValue_part(unsigned char * datas,unsigned int num)
+static void EPD_SetRAMValue_part(uint8_t * datas, uint32_t num)
 {
-    unsigned int i;   
-    unsigned char tempOriginal;      
-    unsigned int tempcol=0;
-    unsigned int templine=0;   
+    uint32_t i;   
+    uint8_t tempOriginal;      
+    uint32_t tempcol=0;
+    uint32_t templine=0;   
 
     Epaper_Write_Command(0x24);   //Write Black and White image to RAM
     for(i=0;i<num;i++){           
@@ -394,7 +487,7 @@ void EPD_SetRAMValue_part(unsigned char * datas,unsigned int num)
     } 
 }
 
-void EPD_Partial_off(void)
+static void EPD_Partial_off(void)
 {
     Epaper_READBUSY();
     Epaper_Write_Command(0x22);
@@ -406,16 +499,16 @@ void EPD_Partial_off(void)
     osDelay(100);
 }
 
-void EPD_Partial_Update(void)
+static void EPD_Partial_Update(void)
 {
     Epaper_Write_Command(0x22); 
     Epaper_Write_Data(0x0c);   
     Epaper_Write_Command(0x20); 
     Epaper_READBUSY(); 	
-    osDelay(20);
+    //osDelay(20);
 }
 
-void EPD_Update()
+static void EPD_Update(void)
 {
     Epaper_Write_Command(0x22);
     Epaper_Write_Data(0xC7);    // (Enable Clock Signal, Enable CP) (Display update,Disable CP,Disable Clock Signal) ��������˳�� 
@@ -424,7 +517,7 @@ void EPD_Update()
     //osDelay(100);
 }
 
-void EPD_Sleep()
+static void EPD_Sleep(void)
 {
     Epaper_Write_Command(0x10);
     Epaper_Write_Data(0x01);
@@ -432,8 +525,7 @@ void EPD_Sleep()
     osDelay(100);
 }
 
-
-void EPD_UpdateBegin(void)
+static void EPD_UpdateBegin(void)
 {
     Epaper_READBUSY();  
     Epaper_Write_Command(0x44);       // set RAM x address start/end
@@ -451,7 +543,7 @@ void EPD_UpdateBegin(void)
     Epaper_Write_Data(0x00);
 }
 
-void EPD_SetAll_white(void)
+static void EPD_SetAll_white(void)
 {
     unsigned int i, k;
     Epaper_Write_Command(0x4E);   // set RAM x address count to 0;
@@ -469,7 +561,7 @@ void EPD_SetAll_white(void)
     }
 }
 
-void EPD_Black(void)
+static void EPD_Black(void)
 {
     unsigned int i,k;
     Epaper_Write_Command(0x24);   //write RAM for black(0)/white (1)
@@ -485,7 +577,7 @@ void EPD_Black(void)
     }
 }
 
-void EPD_WhiteGrid(void)
+static void EPD_WhiteGrid(void)
 {
     unsigned int i,k;
     Epaper_Write_Command(0x24);   //write RAM for black(0)/white (1)
@@ -509,7 +601,7 @@ void EPD_WhiteGrid(void)
     }
 }
 
-void EPD_WhiteGrid_reload(void)
+static void EPD_WhiteGrid_reload(void)
 {
     unsigned int i,k;
     Epaper_Write_Command(0x26);   //write RAM for black(0)/white (1)
@@ -533,7 +625,7 @@ void EPD_WhiteGrid_reload(void)
     }
 }
 
-void EPD_SetAll_BW(void)
+static void EPD_SetAll_BW(void)
 {
     unsigned int i,k;
     Epaper_Write_Command(0x4E);   // set RAM x address count to 0;
@@ -560,19 +652,280 @@ void EPD_SetAll_BW(void)
         }
     }
 }
+/* Test begin.. */
+static void EPD_SetRAMValue_BaseMap(const uint8_t *datas)
+{
+	uint32_t i;   
+	const uint8_t *datas_flag; 
+	uint32_t x_end, y_start1, y_start2, y_end1, y_end2;
+	uint32_t x_start = 0, y_start = 152;
+	uint32_t PART_COLUMN = 152, PART_LINE = 152;  
+	datas_flag = datas;
+	//FULL update
+    EPD_HW_Init();
+    Epaper_Write_Command(0x24);   //Write Black and White image to RAM
+    for(i = 0; i < ALLSCREEN_GRAGHBYTES; i++){               
+        Epaper_Write_Data(*datas);
+        datas++;
+    }
+
+    EPD_Update();	 
+	//EPD_Partial();
+	//PART update
+    //EPD_Part_Init();
+    EPD_Partial();
+    
+    datas = datas_flag;
+    x_start = x_start/8;
+    x_end = (x_start + PART_LINE)/8-1; 
+	
+	y_start1 = 0;
+	y_start2 = y_start - 1;
+	if(y_start >= 256){
+		y_start1 = y_start2/256;
+		y_start2 = y_start2%256;
+	}
+	y_end1 = 0;
+	y_end2 = 0;
+	if(y_end2 >= 256){
+		y_end1 = y_end2/256;
+		y_end2 = y_end2%256;		
+	}		
+    EPD_UpdateBegin_part((uint8_t)x_start, x_end, y_start1, y_start1, y_end1, y_end2);
+#if 0
+	Epaper_Write_Command(0x44);       // set RAM x address start/end, in page 35
+	Epaper_Write_Data(x_start);    // RAM x address start at 00h;
+	Epaper_Write_Data(x_end);    // RAM x address end at 0fh(15+1)*8->128 
+	Epaper_Write_Command(0x45);       // set RAM y address start/end, in page 35
+	Epaper_Write_Data(y_start2);    // RAM y address start at 0127h;
+	Epaper_Write_Data(y_start1);    // RAM y address start at 0127h;
+	Epaper_Write_Data(y_end2);    // RAM y address end at 00h;
+	Epaper_Write_Data(y_end1);    // ????=0	
+
+	Epaper_Write_Command(0x4E);   // set RAM x address count to 0;
+	Epaper_Write_Data(x_start); 
+	Epaper_Write_Command(0x4F);   // set RAM y address count to 0X127;    
+	Epaper_Write_Data(y_start2);
+	Epaper_Write_Data(y_start1);
+#endif
+    Epaper_Write_Command(0x24);   //Write Black and White image to RAM
+    for(i=0;i<PART_COLUMN*PART_LINE/8;i++){                         
+        Epaper_Write_Data(*datas);
+        datas++;
+    }
+    //EPD_Part_Update();
+	EPD_Partial_Update();
+
+	datas=datas_flag;
+    EPD_UpdateBegin_part((uint8_t)x_start, x_end, y_start1, y_start1, y_end1, y_end2);
+#if 0
+	Epaper_Write_Command(0x44);       // set RAM x address start/end, in page 35
+	Epaper_Write_Data(x_start);    // RAM x address start at 00h;
+	Epaper_Write_Data(x_end);    // RAM x address end at 0fh(15+1)*8->128 
+	Epaper_Write_Command(0x45);       // set RAM y address start/end, in page 35
+	Epaper_Write_Data(y_start2);    // RAM y address start at 0127h;
+	Epaper_Write_Data(y_start1);    // RAM y address start at 0127h;
+	Epaper_Write_Data(y_end2);    // RAM y address end at 00h;
+	Epaper_Write_Data(y_end1);    // ????=0	
+
+
+	Epaper_Write_Command(0x4E);   // set RAM x address count to 0;
+	Epaper_Write_Data(x_start); 
+	Epaper_Write_Command(0x4F);   // set RAM y address count to 0X127;    
+	Epaper_Write_Data(y_start2);
+	Epaper_Write_Data(y_start1);
+#endif
+    Epaper_Write_Command(0x24);   //Write Black and White image to RAM
+    for(i = 0;i < PART_COLUMN*PART_LINE/8; i++){                         
+        Epaper_Write_Data(*datas);
+        datas++;
+    }
+}
+
+static void EPD_Dis_Part(uint32_t x_start, uint32_t y_start,
+                            const uint8_t * datas,
+                            uint32_t PART_COLUMN, uint32_t PART_LINE)
+{
+    const uint8_t *datas_flag; 
+    uint32_t i;  
+    uint32_t x_end,y_start1,y_start2,y_end1,y_end2;
+    
+    datas_flag = datas;
+    x_start = x_start / 8;
+    x_end = x_start + PART_LINE / 8 - 1; 
+    
+    y_start1 = 0;
+    y_start2 = y_start - 1;
+    if(y_start >= 256){
+        y_start1 = y_start2 / 256;
+        y_start2 = y_start2 % 256;
+    }
+    y_end1 = 0;
+    y_end2 = y_start + PART_COLUMN-1;
+    if(y_end2 >= 256){
+        y_end1 = y_end2 / 256;
+        y_end2 = y_end2 % 256;      
+    }
+    EPD_UpdateBegin_part((uint8_t)x_start, x_end, y_start1, y_start1, y_end1, y_end2);
+#if 1
+    Epaper_Write_Command(0x24);     //Write Black and White image to RAM
+    for(i = 0; i < PART_COLUMN*PART_LINE/8; i++){                         
+        Epaper_Write_Data(*datas);
+        datas++;
+    }
+#else
+    uint8_t tempOriginal;
+    uint32_t tempcol=0;
+    uint32_t templine=0;
+
+    Epaper_Write_Command(0x24);     // write RAM for black(0)/white (1)
+    for(i = 0; i < PART_COLUMN*PART_LINE/8; i++){         
+        tempOriginal = *(datas + templine*PART_COLUMN/8 + tempcol);
+        templine++;
+        if(templine >= PART_LINE){
+            tempcol++;
+            templine = 0;
+        }     
+        Epaper_Write_Data(~tempOriginal); 
+    }
+#endif
+    EPD_Partial_Update();
+
+    datas=datas_flag;
+    EPD_UpdateBegin_part((uint8_t)x_start,x_end,y_start1,y_start1,y_end1,y_end2);
+#if 1
+    Epaper_Write_Command(0x24);     //Write Black and White image to RAM
+    for(i = 0; i < PART_COLUMN*PART_LINE/8; i++){                         
+        Epaper_Write_Data(*datas);
+        datas++;
+    }
+#else
+    tempcol=0;
+    templine=0;
+
+    Epaper_Write_Command(0x24);     // write RAM for black(0)/white (1)
+    for(i = 0; i < PART_COLUMN*PART_LINE/8; i++){         
+        tempOriginal = *(datas + templine*PART_COLUMN/8 + tempcol);
+        templine++;
+        if(templine >= PART_LINE){
+            tempcol++;
+            templine = 0;
+        }     
+        Epaper_Write_Data(~tempOriginal); 
+    }
+#endif
+    EPD_Partial_Update();
+}
+
+static void EPD_Part_Init(void)
+{
+#if 0
+    EPD_HW_Init();
+    EPD_select_LUT(LUT_DATA_part);
+
+    //POWER ON
+    Epaper_Write_Command(0x22); 
+    Epaper_Write_Data(0xC0);   
+    Epaper_Write_Command(0x20); 
+    Epaper_READBUSY();  
+
+    Epaper_Write_Command(0x3C); //BorderWavefrom
+    Epaper_Write_Data(0x01);
+    osDelay(100);   //is necessary
+#else
+    Epaper_READBUSY();  
+
+    EPD_select_LUT(LUT_DATA_part, sizeof(LUT_DATA_part));
+
+    Epaper_Write_Command(0x37);      
+    Epaper_Write_Data(0x00); 
+    Epaper_Write_Data(0x00); 
+    Epaper_Write_Data(0x00); 
+    Epaper_Write_Data(0x00); 
+    Epaper_Write_Data(0x40); 
+    Epaper_Write_Data(0x00); 
+    Epaper_Write_Data(0x00); 
+
+    Epaper_Write_Command(0x3C);       // board 
+    Epaper_Write_Data(0x80); 
+
+    Epaper_Write_Command(0x22); 
+    Epaper_Write_Data(0xC0);   
+    Epaper_Write_Command(0x20); 
+    Epaper_READBUSY();  
+#endif
+}
+
+static void EPD_SetRAMValue_part_image2(unsigned char * datas,unsigned int num)
+{
+  unsigned int i;   
+  unsigned char tempOriginal;      
+  unsigned int tempcol=0;
+  unsigned int templine=0;   
+
+  Epaper_Write_Command(0x24);   //Write Black and White image to RAM
+   for(i=0;i<num;i++)
+   {           
+     tempOriginal=*(datas+templine*48+tempcol);
+     templine++;
+     if(templine>=9)
+     {
+       tempcol++;
+       templine=0;
+     }     
+     Epaper_Write_Data(tempOriginal);
+   } 
+
+}
+
+static void EPD_UpdateAndClose_part(void)
+{   
+  osDelay(500);//500mS  
+  //HalLcd_HW_Control(0x21); 
+  //HalLcd_HW_Write(0x40);   
+ 
+  Epaper_Write_Command(0x22); 
+  Epaper_Write_Data(0x0f);   
+  Epaper_Write_Command(0x20); 
+  Epaper_READBUSY();  
+
+  //HalLcd_HW_Control(0x10); //enter deep sleep
+  //HalLcd_HW_Write(0x01); 
+
+  osDelay(1000);  
+}
 
 int EPD_Task(void)
 {
     uint8_t i;
     Debug_printf("Info: EPD_Task.\n");
-    EPD_HW_Init();
     while(1){
-        for(i = 0; i < 36; i++){
-            EPD_SetRAMValue_15((uint8_t *)gImage_clock[i],ALLSCREEN_GRAGHBYTES,MONO_MODE);
+#if 0
+        EPD_HW_Init();
+        for(i = 0; i < 1; i++){
+            EPD_SetRAMValue((uint8_t *)gImage_clock[i], ALLSCREEN_GRAGHBYTES, MONO_MODE);
             EPD_Update();
         }
+         osDelay(1000);
+        EPD_SetRAMValue_BaseMap((uint8_t *)gImage_152bb);
+        //EPD_Partial();
+        EPD_Part_Init();
+#if 1
+        EPD_Dis_Part(0, 32, gImage_num1, 32, 32);      
+        EPD_Dis_Part(0, 32, gImage_num2, 32, 32);
+#endif
+#else
+        EPD_HW_Init();
+        EPD_SetRAMValue((unsigned char *)INCH_BW,ALLSCREEN_GRAGHBYTES,MONO_MODE);    
+        EPD_UpdateAndClose(); 
+        osDelay(1000);
+        
+        EPD_Part_Init();
+        EPD_UpdateBegin_part(0x00,0x8,0x00,0x83,0x00,0x54); //132 84
+        EPD_SetRAMValue_part_image2((unsigned char *)XG, 432);   
+        EPD_UpdateAndClose_part();
+#endif
     }
 }
-
 
 /* End of this file. */
