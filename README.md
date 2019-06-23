@@ -1,5 +1,5 @@
-# eINC_demostration
-eINC_demostration
+# eInk_demostration
+eInk_demostration
 # Notification
 This is an opening demostration project for eINC print. Just feel free to use this demo.
 
